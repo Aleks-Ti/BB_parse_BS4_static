@@ -2,37 +2,37 @@ import requests
 from bs4 import BeautifulSoup
 import asyncio
 import tracemalloc
-from http import HTTPStatus
-from pprint import pprint
-HEADERS = {
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
-              "image/avif,image/webp,image/apng,*/*;q=0.8,"
-              "application/signed-exchange;v=b3;q=0.7",
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                  "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 "
-                  "Safari/537.36"
+import tls_client
+import aiohttp
+from requests_html import HTMLSession
+
+header = {
+    "Accept": "application/json, text/plain, */*",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/117.0",
 }
 
-session = requests.Session()
-session.headers.update(HEADERS)
+session = HTMLSession()
 
-
-def parse_page_rings():
-    url = 'https://jewelers.services/productcore/api/pl/Jewelry-Rings-2·Stone-Rings'
+def parse_date_rings():
+    url = 'https://qgold.com/pl/Jewelry-Rings-Adjustable/'
     response = session.get(url)
-    if (status := response.status_code) == HTTPStatus.OK:
-        d = response.json()
-        pprint(d)
-    print(status)
+    response.html.render(sleep=5)
+    soup = BeautifulSoup(response.html.html, 'lxml')
+    swagger = soup.find("div", {"class": "row product-list"})
+    print(swagger.text)
+    
 
+def parse_date_adjustable():
 
-def parse_page_adjustable():
-    response = requests.get(
-        'https://qgold.com/pl/Jewelry-Rings-Adjustable/', HEADERS
-    )
-    soup = BeautifulSoup(response.text, features='lxml')
-    print(soup)
+    url = 'https://qgold.com/pl/Jewelry-Rings-Adjustable/'
+    response = session.get(url)
+    response.html.render(sleep=5)
+    special_div = response.html.find('div.row.product-list', first=True)
+    if special_div:
+        print(special_div.text)
+        print(special_div.links)
+    else:
+        print('НЕ НАЙДЕНО')
 
-
-parse_date_rings()
-# parse_date_adjustable()
+# parse_date_rings()
+parse_date_adjustable()
