@@ -57,6 +57,7 @@ cover/
 .~lock.product_date.xlsx#
 .xlsx
 product_date.xlsx
+v_venv
 # Django stuff:
 *.log
 local_settings.py
@@ -66,7 +67,7 @@ db.sqlite3-journal
 # Flask stuff:
 instance/
 .webassets-cache
-
+requirements1.txt
 # Scrapy stuff:
 .scrapy
 

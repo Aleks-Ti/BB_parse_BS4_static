@@ -1,23 +1,23 @@
 import asyncio
-import tracemalloc
-from requests_html import HTMLSession
 from http import HTTPStatus
-from settings import HEADER, TABLE_SCHEMA, ADDRES
+
+from requests_html import AsyncHTMLSession
+from tqdm import tqdm
+
+from settings import ADDRES, HEADER, PAYLOAD, TABLE_SCHEMA
 from utils import parse_data_save, save_in_list_date
-import time
-import random
 
-session = HTMLSession()
+session = AsyncHTMLSession()
 
 
-def sizes_price(date: list[dict]) -> list:
+async def sizes_price(date: list[dict]) -> list:
     result = []
     for attr in date:
         result.append({'Size: ' + str(attr['Size']): round(attr['MSRP'], 2)})
     return result
 
 
-def video_data(dp: dict) -> dict:
+async def video_data(dp: dict) -> dict:
     """Парс ссылок на видео товара."""
 
     result = {}
@@ -34,7 +34,7 @@ def video_data(dp: dict) -> dict:
     return result
 
 
-def images_data(dp: dict) -> dict:
+async def images_data(dp: dict) -> dict:
     """Парс фото товара."""
 
     result = {}
@@ -51,7 +51,7 @@ def images_data(dp: dict) -> dict:
     return result
 
 
-def attributesnamed_data(dp: dict) -> dict:
+async def attributesnamed_data(dp: dict) -> dict:
     """Парс побочных данных товара по ключу 'AttributesNamed'."""
 
     result = {}
@@ -64,7 +64,7 @@ def attributesnamed_data(dp: dict) -> dict:
     return result
 
 
-def specifications_data(dp: dict) -> dict:
+async def specifications_data(dp: dict) -> dict:
     """Парс побочных данных товара по ключу 'Specifications'."""
 
     result = {}
@@ -77,7 +77,7 @@ def specifications_data(dp: dict) -> dict:
     return result
 
 
-def product_data(dp: dict) -> dict:
+async def product_data(dp: dict) -> dict:
     """Парс поверхностных данных товара по ключу 'Product'."""
 
     result = {}
@@ -93,38 +93,28 @@ def product_data(dp: dict) -> dict:
     return result
 
 
-def detail(links: set) -> None:
-    '''Основной цикл парсинга данных.
+async def detail(links: set) -> None:
+    """Основной цикл парсинга данных.
 
-    Atributs:
-        dp - date page product in json file
-    '''
+    dp - date links in index page
+    """
 
     result = {}
-    num = 0
-    for link in links:
-        num += 1
+    for link in tqdm(links, desc='Прогресс парсинга'):
         url = 'https://jewelers.services/productcore/api'
         url = url + link + '/'
-        response = session.get(url=url, headers=HEADER)
+        response = await session.get(url=url, headers=HEADER)
         if response.status_code == HTTPStatus.OK and 'family' not in url:
-            dp: dict = response.json()
+            dp = response.json()
 
-            result.update(product_data(dp))
-
-            result.update(specifications_data(dp))
-
-            result.update(attributesnamed_data(dp))
-
-            result.update(images_data(dp))
-
-            result.update(video_data(dp))
-
+            result.update(await product_data(dp))
+            result.update(await specifications_data(dp))
+            result.update(await attributesnamed_data(dp))
+            result.update(await images_data(dp))
+            result.update(await video_data(dp))
             if date := dp.get('Sizes'):
                 result['Sizes'] = sizes_price(date)
-
-            # time.sleep(random.randint(1, 5))
-            print(f'control{num}')
+            # print(f'control_async{num}')
 
         elif 'family' in url:
             result['Error'] = 'Товар под заказ, нет конкретных данных.'
@@ -135,30 +125,22 @@ def detail(links: set) -> None:
         save_in_list_date(result)
         result = {}
 
-    print('control end')
 
+async def parse_links_product():
+    """Получает json с данными и достаёт ссылки на товар."""
 
-def parse_links_product():
-    """Получение ссылок со страницы на детализацию товаров."""
-
+    links = []
+    tasks = []
     for addres in ADDRES:
-        url = 'https://qgold.com/pl/' + addres
-        response = session.get(url)
+        url = 'https://jewelers.services/productcore/api/pl/' + addres
+        response = await session.post(url=url, headers=HEADER, json=PAYLOAD)
         if response.status_code == HTTPStatus.OK:
-            response.html.render(sleep=10)
-            special_div = response.html.find(
-                'div.row.product-list', first=True
-            )
-            if special_div:
-                # special_div.text
-                links = special_div.links
-                detail(links)
-            else:
-                print(f'НЕ НАЙДЕНО {special_div} по адресу: {url}')
-        else:
-            print(f'Сайт не доступен {url}')
-
+            dp = response.json()
+            qwer = dp.get('IndexedProducts')['Results']
+            for url in qwer:
+                links.append(
+                    '/pd/' + url.get('URLDescription') + '/' + url.get('Style')
+                )
+        tasks.append(detail(links))
+    await asyncio.gather(*tasks)
     parse_data_save()
-
-
-parse_links_product()

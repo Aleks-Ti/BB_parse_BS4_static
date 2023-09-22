@@ -18,9 +18,11 @@ MIN_IN_SEC = 60
 '''
 
 
-RETRY_PERIOD = 10
+RETRY_PERIOD_DEFAULT = 60
 '''Период за которой происходит повторный запуск программы:
    и парс данных с сайта.
+
+   Default - 1 час
 '''
 
 
@@ -28,12 +30,17 @@ EXIT_COMMANDS = ('exit', 'q', 'quit', 'c', 'cancel', 'z', 'ex')
 '''Тригер команды для выхода или отмены ввода.'''
 
 
+MESSAGE_POSITIVE_INT = (
+    'Количество, должно быть положительным целым числом: 1, 2, 3, ...'
+)
+
+
 MESSAGE_EXIT_PROGRAM = 'Ручная остановка программы.'
 '''Сообщение об остановки программы.'''
 
 
 START_MESSAGE = (
-    'Нажмите ввод(enter) пустой стркои для дефолтного значения в 1 минуту.\n'
+    'Нажмите ввод(enter) пустой строки для дефолтного значения в 1 минуту.\n'
     '\tили\n'
     ' введите нужное количество минут N\n'
     ' N - периодичность запроса к сайту:'
@@ -58,7 +65,7 @@ HEADER = {
     'Sec-Fetch-Mode': 'cors',
     'Sec-Fetch-Site': 'cross-site',
     'Trailerid': '820242c8-4abc-4a1c-be4e-ee4c5ff9b7f1',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36 Edg/117.0.2045.36'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36 Edg/117.0.2045.36',
 }
 
 
@@ -89,9 +96,20 @@ TABLE_SCHEMA = (
 '''Структура и ключи соответствия для получаемых данных из json.'''
 
 
-ADDRES = ('Jewelry-Rings-Adjustable/', 'Jewelry-Rings-2·Stone-Rings/',)
+ADDRES = (
+    'Jewelry-Rings-Adjustable/',
+    'Jewelry-Rings-2·Stone-Rings/',
+)
 '''Ссылки для распарса данных.'''
 
 
 TEMPORARY_STORAGE = []
 """Собирает список словарей с данными."""
+
+
+PAYLOAD = {
+    "filters": [{"key": "ItemsPerPage", "value": "36"}],
+    "page": 1,
+    "sortCode": 5,
+    "path": "Jewelry-Rings-2·Stone-Rings",
+}
