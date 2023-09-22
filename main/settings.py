@@ -17,16 +17,20 @@ MIN_IN_SEC = 60
         - 5 минут * 60 = 300 секунд
 '''
 
+
 RETRY_PERIOD = 10
 '''Период за которой происходит повторный запуск программы:
    и парс данных с сайта.
 '''
 
+
 EXIT_COMMANDS = ('exit', 'q', 'quit', 'c', 'cancel', 'z', 'ex')
 '''Тригер команды для выхода или отмены ввода.'''
 
+
 MESSAGE_EXIT_PROGRAM = 'Ручная остановка программы.'
 '''Сообщение об остановки программы.'''
+
 
 START_MESSAGE = (
     'Нажмите ввод(enter) пустой стркои для дефолтного значения в 1 минуту.\n'
@@ -57,7 +61,9 @@ HEADER = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36 Edg/117.0.2045.36'
 }
 
+
 TABLE_SCHEMA = (
+    'Description',  # Product
     'Style',  # Product
     'MSRP',  # Product
     'InStock',  # Product
@@ -78,5 +84,10 @@ TABLE_SCHEMA = (
     'Manufacturing Process',  # Specifications
     'Profile Type',  # Specifications
     'Ring Shape',  # Specifications
+    'FileName',  # Images
 )
 '''Структура и ключи соответствия для получаемых данных из json.'''
+
+
+ADDRES = ('Jewelry-Rings-Adjustable/', 'Jewelry-Rings-2·Stone-Rings/',)
+'''Ссылки для распарса данных.'''
