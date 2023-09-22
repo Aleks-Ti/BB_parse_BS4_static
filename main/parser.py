@@ -1,15 +1,12 @@
-import requests
-from bs4 import BeautifulSoup
 import asyncio
 import tracemalloc
 from requests_html import HTMLSession
 from http import HTTPStatus
 from settings import HEADER, TABLE_SCHEMA, ADDRES
-import requests_cache
+from utils import parse_data_save, save_in_list_date
 import time
 import random
 
-requests_cache.install_cache('my_cache', expire_after=3600)
 session = HTMLSession()
 
 
@@ -104,7 +101,9 @@ def detail(links: set) -> None:
     '''
 
     result = {}
+    num = 0
     for link in links:
+        num += 1
         url = 'https://jewelers.services/productcore/api'
         url = url + link + '/'
         response = session.get(url=url, headers=HEADER)
@@ -124,8 +123,8 @@ def detail(links: set) -> None:
             if date := dp.get('Sizes'):
                 result['Sizes'] = sizes_price(date)
 
-            time.sleep(random.randint(1, 5))
-            print('control')
+            # time.sleep(random.randint(1, 5))
+            print(f'control{num}')
 
         elif 'family' in url:
             result['Error'] = 'Товар под заказ, нет конкретных данных.'
@@ -133,6 +132,7 @@ def detail(links: set) -> None:
         else:
             print(f'Битая ссылка {url}')
 
+        save_in_list_date(result)
         result = {}
 
     print('control end')
@@ -146,7 +146,9 @@ def parse_links_product():
         response = session.get(url)
         if response.status_code == HTTPStatus.OK:
             response.html.render(sleep=10)
-            special_div = response.html.find('div.row.product-list', first=True)
+            special_div = response.html.find(
+                'div.row.product-list', first=True
+            )
             if special_div:
                 # special_div.text
                 links = special_div.links
@@ -155,6 +157,8 @@ def parse_links_product():
                 print(f'НЕ НАЙДЕНО {special_div} по адресу: {url}')
         else:
             print(f'Сайт не доступен {url}')
+
+    parse_data_save()
 
 
 parse_links_product()

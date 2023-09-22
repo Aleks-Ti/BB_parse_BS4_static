@@ -91,3 +91,7 @@ TABLE_SCHEMA = (
 
 ADDRES = ('Jewelry-Rings-Adjustable/', 'Jewelry-Rings-2·Stone-Rings/',)
 '''Ссылки для распарса данных.'''
+
+
+TEMPORARY_STORAGE = []
+"""Собирает список словарей с данными."""
