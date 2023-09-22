@@ -11,9 +11,10 @@ session = AsyncHTMLSession()
 
 
 async def sizes_price(date: list[dict]) -> list:
+    """Получает размеры изделия и цены, если есть вариантивность."""
     result = []
     for attr in date:
-        result.append({'Size: ' + str(attr['Size']): round(attr['MSRP'], 2)})
+        result.append(f'Size: {str(attr["Size"])}: {round(attr["MSRP"], 2)}')
     return result
 
 
@@ -100,7 +101,9 @@ async def detail(links: set) -> None:
     """
 
     result = {}
+    # num = 0
     for link in tqdm(links, desc='Прогресс парсинга'):
+        # num += 1
         url = 'https://jewelers.services/productcore/api'
         url = url + link + '/'
         response = await session.get(url=url, headers=HEADER)
@@ -113,7 +116,7 @@ async def detail(links: set) -> None:
             result.update(await images_data(dp))
             result.update(await video_data(dp))
             if date := dp.get('Sizes'):
-                result['Sizes'] = sizes_price(date)
+                result['Sizes'] = await sizes_price(date)
             # print(f'control_async{num}')
 
         elif 'family' in url:

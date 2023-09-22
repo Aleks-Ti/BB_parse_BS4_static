@@ -35,7 +35,7 @@ async def parse_date():
 def main():
     """Стартовая функция и ожидание ввода пользователя.
 
-    Attribures:
+    Constants:
         - RETRY_PERIOD_DEFAULT: время ожидания в минутах
     """
 
