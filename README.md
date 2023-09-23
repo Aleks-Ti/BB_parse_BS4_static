@@ -61,4 +61,4 @@ python main.py
 
 ### Блок схема
 
-![Блок схема](images/diagram.png)
+![Блок схема](images/_diagram.png)
