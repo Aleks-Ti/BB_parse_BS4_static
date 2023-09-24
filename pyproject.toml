@@ -1,7 +1,7 @@
 [tool.black]
 line-length = 79
 skip-string-normalization = true
-extend-exclude = 'venv'
+extend-exclude = "venv"
 
 [tool.isort]
 profile = "black"

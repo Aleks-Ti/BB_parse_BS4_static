@@ -20,7 +20,6 @@ async def sizes_price(date: list[dict]) -> list:
 
 async def video_data(dp: dict) -> dict:
     """Парс ссылок на видео товара."""
-
     result = {}
     product_video_path = dp.get('Video')
     if product_video_path:
@@ -37,7 +36,6 @@ async def video_data(dp: dict) -> dict:
 
 async def images_data(dp: dict) -> dict:
     """Парс фото товара."""
-
     result = {}
     product_image_path = dp.get('Images')
     result_links_image = []
@@ -54,7 +52,6 @@ async def images_data(dp: dict) -> dict:
 
 async def attributesnamed_data(dp: dict) -> dict:
     """Парс побочных данных товара по ключу 'AttributesNamed'."""
-
     result = {}
     product_attr_name = dp.get('AttributesNamed')
     for attr in product_attr_name:
@@ -67,7 +64,6 @@ async def attributesnamed_data(dp: dict) -> dict:
 
 async def specifications_data(dp: dict) -> dict:
     """Парс побочных данных товара по ключу 'Specifications'."""
-
     result = {}
     product_detail = dp.get('Specifications')
     for attr in product_detail:
@@ -80,7 +76,6 @@ async def specifications_data(dp: dict) -> dict:
 
 async def product_data(dp: dict) -> dict:
     """Парс поверхностных данных товара по ключу 'Product'."""
-
     result = {}
     product = dp.get('Product')
     for attr in product:
@@ -99,7 +94,6 @@ async def detail(links: set) -> None:
 
     dp - date links in index page
     """
-
     result = {}
     # num = 0
     for link in tqdm(links, desc='Прогресс парсинга'):
@@ -129,9 +123,8 @@ async def detail(links: set) -> None:
         result = {}
 
 
-async def parse_links_product():
+async def parse_links_product() -> None:
     """Получает json с данными и достаёт ссылки на товар."""
-
     links = []
     tasks = []
     for addres in ADDRES:

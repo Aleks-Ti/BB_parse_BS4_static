@@ -4,12 +4,12 @@ from settings import TEMPORARY_STORAGE
 from settings import bcolors as bc
 
 
-def save_in_list_date(data):
+def save_in_list_date(data: dict) -> None:
     """Добавляет данные в виде словаря в список."""
     TEMPORARY_STORAGE.append(data)
 
 
-def parse_data_save():
+def parse_data_save() -> None:
     """Сохраняет данные в таблице excel."""
     df = pd.DataFrame(TEMPORARY_STORAGE)
 

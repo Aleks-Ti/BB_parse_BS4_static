@@ -24,7 +24,7 @@ logging.basicConfig(
 )
 
 
-async def parse_date():
+async def parse_date() -> None:
     """Запускает парсинг данных."""
     try:
         await parse_links_product()
@@ -32,13 +32,12 @@ async def parse_date():
         logging.error(err)
 
 
-def main():
+def main() -> None:
     """Стартовая функция и ожидание ввода пользователя.
 
     Constants:
         - RETRY_PERIOD_DEFAULT: время ожидания в минутах
     """
-
     RETRY_PERIOD = RETRY_PERIOD_DEFAULT
     while True:
         try:
@@ -70,7 +69,7 @@ def main():
             print(f'{bc.OK_CYAN} {MESSAGE_EXIT_PROGRAM}')
             sys.exit(1)
 
-    async def run_parse():
+    async def run_parse() -> None:
         """Вспомогательная функция, запускающая цикл событий."""
         while True:
             logging.info('Старт программы.')
