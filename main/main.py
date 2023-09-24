@@ -4,7 +4,8 @@ import os
 import sys
 import tracemalloc
 from tqdm import tqdm
-
+import aiohttp
+from utils import progress_bar
 from pars_site import parse_links_product
 from settings import (
     EXIT_COMMANDS,
@@ -24,12 +25,21 @@ logging.basicConfig(
 )
 
 
+async def close_session(session):
+    """Закрытие aiohttp сессии."""
+    await session.close()
+
+
+@progress_bar(total=100)
 async def parse_date() -> None:
-    """Запускает парсинг данных."""
+    """Открывает/закрывает клиент сессию и передает."""
     try:
-        await parse_links_product()
+        session = aiohttp.ClientSession()
+        await parse_links_product(session)
     except Exception as err:
         logging.error(err)
+    finally:
+        await close_session(session)
 
 
 def main() -> None:
@@ -85,11 +95,8 @@ def main() -> None:
             ):
                 await asyncio.sleep(1)
 
-    loop = asyncio.get_event_loop()
     tracemalloc.start()
-    loop.run_until_complete(run_parse())
-
-
+    asyncio.run(run_parse())
 
 
 if __name__ == '__main__':

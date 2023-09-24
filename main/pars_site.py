@@ -1,10 +1,9 @@
 import asyncio
 from http import HTTPStatus
 import aiohttp
-from requests_html import AsyncHTMLSession
+from aiohttp import ClientSession
 from tqdm import tqdm
 import logging
-import os
 from settings import ADDRES, HEADER, PAYLOAD, TABLE_SCHEMA
 from utils import parse_data_save, save_in_list_date
 
@@ -17,10 +16,10 @@ async def sizes_price(date: list[dict]) -> list:
     return result
 
 
-async def video_data(dp: dict) -> dict:
+async def video_data(product_info: dict) -> dict:
     """Парс ссылок на видео товара."""
     result = {}
-    product_video_path = dp.get('Video')
+    product_video_path = product_info.get('Video')
     if product_video_path:
         prefics = product_video_path.get('FileName')
         if prefics:
@@ -33,10 +32,10 @@ async def video_data(dp: dict) -> dict:
     return result
 
 
-async def images_data(dp: dict) -> dict:
+async def images_data(product_info: dict) -> dict:
     """Парс фото товара."""
     result = {}
-    product_image_path = dp.get('Images')
+    product_image_path = product_info.get('Images')
     result_links_image = []
     for image_date in product_image_path:
         prefics = image_date.get('FileName')
@@ -49,10 +48,10 @@ async def images_data(dp: dict) -> dict:
     return result
 
 
-async def attributesnamed_data(dp: dict) -> dict:
+async def attributesnamed_data(product_info: dict) -> dict:
     """Парс побочных данных товара по ключу 'AttributesNamed'."""
     result = {}
-    product_attr_name = dp.get('AttributesNamed')
+    product_attr_name = product_info.get('AttributesNamed')
     for attr in product_attr_name:
         qwer = attr['AttributeDescription']
         if qwer in TABLE_SCHEMA:
@@ -61,10 +60,10 @@ async def attributesnamed_data(dp: dict) -> dict:
     return result
 
 
-async def specifications_data(dp: dict) -> dict:
+async def specifications_data(product_info: dict) -> dict:
     """Парс побочных данных товара по ключу 'Specifications'."""
     result = {}
-    product_detail = dp.get('Specifications')
+    product_detail = product_info.get('Specifications')
     for attr in product_detail:
         qwer = attr['Specification']
         if qwer in TABLE_SCHEMA:
@@ -73,10 +72,10 @@ async def specifications_data(dp: dict) -> dict:
     return result
 
 
-async def product_data(dp: dict) -> dict:
+async def product_data(product_info: dict) -> dict:
     """Парс поверхностных данных товара по ключу 'Product'."""
     result = {}
-    product = dp.get('Product')
+    product = product_info.get('Product')
     for attr in product:
         if attr == 'InStock':
             if product[attr] < 1:
@@ -88,7 +87,7 @@ async def product_data(dp: dict) -> dict:
     return result
 
 
-async def detail(links: set) -> None:
+async def detail(links: list, session: ClientSession) -> None:
     """Основной цикл парсинга данных.
 
     dp - date links in index page
@@ -99,52 +98,65 @@ async def detail(links: set) -> None:
         # num += 1
         url = 'https://jewelers.services/productcore/api'
         url = url + link + '/'
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.get(url=url, headers=HEADER) as response:
-                    if response.status == HTTPStatus.OK and 'family' not in url:
-                        dp = await response.json()
+        try:
+            async with session.get(url=url, headers=HEADER) as response:
+                if response.status == HTTPStatus.OK and 'family' not in url:
+                    product_info_detail = await response.json()
 
-                        result.update(await product_data(dp))
-                        result.update(await specifications_data(dp))
-                        result.update(await attributesnamed_data(dp))
-                        result.update(await images_data(dp))
-                        result.update(await video_data(dp))
-                        if date := dp.get('Sizes'):
-                            result['Sizes'] = await sizes_price(date)
-                        # print(f'control_async{num}')
+                    result.update(await product_data(product_info_detail))
+                    result.update(
+                        await specifications_data(product_info_detail)
+                    )
+                    result.update(
+                        await attributesnamed_data(product_info_detail)
+                    )
+                    result.update(await images_data(product_info_detail))
+                    result.update(await video_data(product_info_detail))
+                    if date := product_info_detail.get('Sizes'):
+                        result['Sizes'] = await sizes_price(date)
+                    # print(f'control_async{num}')
 
-                    elif 'family' in url:
-                        result['Error'] = 'Товар под заказ, нет конкретных данных.'
+                elif 'family' in url:
+                    result['Error'] = 'Товар под заказ, нет конкретных данных.'
 
-                    else:
-                        print(f'Битая ссылка {url}')
-            except BaseException as err:
-                logging.error('Ошибка', err)
-                print(f'Ошибка {err}')
+                else:
+                    print(f'Битая ссылка {url}')
+        except BaseException as err:
+            logging.error('Ошибка', err)
+            print(f'Ошибка {err}')
 
         save_in_list_date(result)
         result = {}
 
 
-async def parse_links_product() -> None:
+async def parse_links_product(session: ClientSession) -> None:
     """Получает json с данными и достаёт ссылки на товар."""
-    links = []
+    product_links = []
     tasks = []
-    async with aiohttp.ClientSession() as session:
-        for addres in ADDRES:
-            url = 'https://jewelers.services/productcore/api/pl/' + addres
-            async with session.post(url=url, headers=HEADER, json=PAYLOAD) as response:
+    for addres in ADDRES:
+        url = 'https://jewelers.services/productcore/api/pl/' + addres
+        try:
+            async with session.post(
+                url=url, headers=HEADER, json=PAYLOAD
+            ) as response:
                 if response.status == HTTPStatus.OK:
-                    dp = await response.json()
-                    qwer = dp.get('IndexedProducts')['Results']
-                    for url in qwer:
-                        links.append(
+                    products_info_page = await response.json()
+                    links = products_info_page.get('IndexedProducts')[
+                        'Results'
+                    ]
+                    for link in links:
+                        product_links.append(
                             '/pd/'
-                            + url.get('URLDescription')
+                            + link.get('URLDescription')
                             + '/'
-                            + url.get('Style'),
+                            + link.get('Style'),
                         )
-            tasks.append(detail(links))
+                else:
+                    logging.warning(
+                        f'Сайт не доступен, статус {response.status}'
+                    )
+            tasks.append(detail(product_links, session))
+        except BaseException as err:
+            logging.error(f'Возникла ошибка: {err}')
     await asyncio.gather(*tasks)
     parse_data_save()
