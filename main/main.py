@@ -3,9 +3,10 @@ import logging
 import os
 import sys
 import tracemalloc
-from tqdm import tqdm
+
 import aiohttp
-from utils import progress_bar
+from tqdm import tqdm
+
 from pars_site import parse_links_product
 from settings import (
     EXIT_COMMANDS,
@@ -25,12 +26,6 @@ logging.basicConfig(
 )
 
 
-async def close_session(session):
-    """Закрытие aiohttp сессии."""
-    await session.close()
-
-
-@progress_bar(total=100)
 async def parse_date() -> None:
     """Открывает/закрывает клиент сессию и передает."""
     try:
@@ -39,7 +34,7 @@ async def parse_date() -> None:
     except Exception as err:
         logging.error(err)
     finally:
-        await close_session(session)
+        await session.close()
 
 
 def main() -> None:

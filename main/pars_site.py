@@ -1,9 +1,10 @@
 import asyncio
+import logging
 from http import HTTPStatus
-import aiohttp
+
 from aiohttp import ClientSession
 from tqdm import tqdm
-import logging
+
 from settings import ADDRES, HEADER, PAYLOAD, TABLE_SCHEMA
 from utils import parse_data_save, save_in_list_date
 
@@ -37,13 +38,14 @@ async def images_data(product_info: dict) -> dict:
     result = {}
     product_image_path = product_info.get('Images')
     result_links_image = []
-    for image_date in product_image_path:
-        prefics = image_date.get('FileName')
-        if prefics:
-            result_links_image.append(
-                'https://images.jewelers.services/qgrepo/' + prefics,
-            )
-    result['Images'] = result_links_image
+    if product_image_path:
+        for image_date in product_image_path:
+            prefics = image_date.get('FileName')
+            if prefics:
+                result_links_image.append(
+                    'https://images.jewelers.services/qgrepo/' + prefics,
+                )
+        result['Images'] = result_links_image
 
     return result
 
@@ -52,10 +54,11 @@ async def attributesnamed_data(product_info: dict) -> dict:
     """Парс побочных данных товара по ключу 'AttributesNamed'."""
     result = {}
     product_attr_name = product_info.get('AttributesNamed')
-    for attr in product_attr_name:
-        qwer = attr['AttributeDescription']
-        if qwer in TABLE_SCHEMA:
-            result[qwer] = attr['AttributeValue']
+    if product_attr_name:
+        for attr in product_attr_name:
+            qwer = attr['AttributeDescription']
+            if qwer in TABLE_SCHEMA:
+                result[qwer] = attr['AttributeValue']
 
     return result
 
@@ -64,10 +67,11 @@ async def specifications_data(product_info: dict) -> dict:
     """Парс побочных данных товара по ключу 'Specifications'."""
     result = {}
     product_detail = product_info.get('Specifications')
-    for attr in product_detail:
-        qwer = attr['Specification']
-        if qwer in TABLE_SCHEMA:
-            result[qwer] = attr['Value']
+    if product_detail:
+        for attr in product_detail:
+            qwer = attr['Specification']
+            if qwer in TABLE_SCHEMA:
+                result[qwer] = attr['Value']
 
     return result
 
@@ -76,13 +80,13 @@ async def product_data(product_info: dict) -> dict:
     """Парс поверхностных данных товара по ключу 'Product'."""
     result = {}
     product = product_info.get('Product')
-    for attr in product:
-        if attr == 'InStock':
-            if product[attr] < 1:
+    if product:
+        for attr in product:
+            if attr == 'InStock' and product[attr] < 1:
                 result[attr] = 'Out of Stock'
                 break
-        if attr in TABLE_SCHEMA:
-            result[attr] = product[attr]
+            if attr in TABLE_SCHEMA:
+                result[attr] = product[attr]
 
     return result
 
@@ -93,9 +97,7 @@ async def detail(links: list, session: ClientSession) -> None:
     dp - date links in index page
     """
     result = {}
-    # num = 0
     for link in tqdm(links, desc='Прогресс парсинга'):
-        # num += 1
         url = 'https://jewelers.services/productcore/api'
         url = url + link + '/'
         try:
@@ -105,16 +107,15 @@ async def detail(links: list, session: ClientSession) -> None:
 
                     result.update(await product_data(product_info_detail))
                     result.update(
-                        await specifications_data(product_info_detail)
+                        await specifications_data(product_info_detail),
                     )
                     result.update(
-                        await attributesnamed_data(product_info_detail)
+                        await attributesnamed_data(product_info_detail),
                     )
                     result.update(await images_data(product_info_detail))
                     result.update(await video_data(product_info_detail))
                     if date := product_info_detail.get('Sizes'):
                         result['Sizes'] = await sizes_price(date)
-                    # print(f'control_async{num}')
 
                 elif 'family' in url:
                     result['Error'] = 'Товар под заказ, нет конкретных данных.'
@@ -137,7 +138,7 @@ async def parse_links_product(session: ClientSession) -> None:
         url = 'https://jewelers.services/productcore/api/pl/' + addres
         try:
             async with session.post(
-                url=url, headers=HEADER, json=PAYLOAD
+                url=url, headers=HEADER, json=PAYLOAD,
             ) as response:
                 if response.status == HTTPStatus.OK:
                     products_info_page = await response.json()
@@ -153,7 +154,7 @@ async def parse_links_product(session: ClientSession) -> None:
                         )
                 else:
                     logging.warning(
-                        f'Сайт не доступен, статус {response.status}'
+                        f'Сайт не доступен, статус {response.status}',
                     )
             tasks.append(detail(product_links, session))
         except BaseException as err:
