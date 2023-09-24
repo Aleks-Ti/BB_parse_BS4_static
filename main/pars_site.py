@@ -1,13 +1,12 @@
 import asyncio
 from http import HTTPStatus
-
+import aiohttp
 from requests_html import AsyncHTMLSession
 from tqdm import tqdm
-
+import logging
+import os
 from settings import ADDRES, HEADER, PAYLOAD, TABLE_SCHEMA
 from utils import parse_data_save, save_in_list_date
-
-session = AsyncHTMLSession()
 
 
 async def sizes_price(date: list[dict]) -> list:
@@ -43,7 +42,7 @@ async def images_data(dp: dict) -> dict:
         prefics = image_date.get('FileName')
         if prefics:
             result_links_image.append(
-                'https://images.jewelers.services/qgrepo/' + prefics
+                'https://images.jewelers.services/qgrepo/' + prefics,
             )
     result['Images'] = result_links_image
 
@@ -100,24 +99,29 @@ async def detail(links: set) -> None:
         # num += 1
         url = 'https://jewelers.services/productcore/api'
         url = url + link + '/'
-        response = await session.get(url=url, headers=HEADER)
-        if response.status_code == HTTPStatus.OK and 'family' not in url:
-            dp = response.json()
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(url=url, headers=HEADER) as response:
+                    if response.status == HTTPStatus.OK and 'family' not in url:
+                        dp = await response.json()
 
-            result.update(await product_data(dp))
-            result.update(await specifications_data(dp))
-            result.update(await attributesnamed_data(dp))
-            result.update(await images_data(dp))
-            result.update(await video_data(dp))
-            if date := dp.get('Sizes'):
-                result['Sizes'] = await sizes_price(date)
-            # print(f'control_async{num}')
+                        result.update(await product_data(dp))
+                        result.update(await specifications_data(dp))
+                        result.update(await attributesnamed_data(dp))
+                        result.update(await images_data(dp))
+                        result.update(await video_data(dp))
+                        if date := dp.get('Sizes'):
+                            result['Sizes'] = await sizes_price(date)
+                        # print(f'control_async{num}')
 
-        elif 'family' in url:
-            result['Error'] = 'Товар под заказ, нет конкретных данных.'
+                    elif 'family' in url:
+                        result['Error'] = 'Товар под заказ, нет конкретных данных.'
 
-        else:
-            print(f'Битая ссылка {url}')
+                    else:
+                        print(f'Битая ссылка {url}')
+            except BaseException as err:
+                logging.error('Ошибка', err)
+                print(f'Ошибка {err}')
 
         save_in_list_date(result)
         result = {}
@@ -127,16 +131,20 @@ async def parse_links_product() -> None:
     """Получает json с данными и достаёт ссылки на товар."""
     links = []
     tasks = []
-    for addres in ADDRES:
-        url = 'https://jewelers.services/productcore/api/pl/' + addres
-        response = await session.post(url=url, headers=HEADER, json=PAYLOAD)
-        if response.status_code == HTTPStatus.OK:
-            dp = response.json()
-            qwer = dp.get('IndexedProducts')['Results']
-            for url in qwer:
-                links.append(
-                    '/pd/' + url.get('URLDescription') + '/' + url.get('Style')
-                )
-        tasks.append(detail(links))
+    async with aiohttp.ClientSession() as session:
+        for addres in ADDRES:
+            url = 'https://jewelers.services/productcore/api/pl/' + addres
+            async with session.post(url=url, headers=HEADER, json=PAYLOAD) as response:
+                if response.status == HTTPStatus.OK:
+                    dp = await response.json()
+                    qwer = dp.get('IndexedProducts')['Results']
+                    for url in qwer:
+                        links.append(
+                            '/pd/'
+                            + url.get('URLDescription')
+                            + '/'
+                            + url.get('Style'),
+                        )
+            tasks.append(detail(links))
     await asyncio.gather(*tasks)
     parse_data_save()

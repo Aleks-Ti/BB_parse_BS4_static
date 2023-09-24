@@ -1,13 +1,13 @@
 src = ["main"]
 cache-dir = "../.cache/ruff"
 
-select = ["E", "F", "B", "I", "ANN", "ASYNC"]
+select = ["E", "F", "B", "I", "COM", "ANN", "ASYNC"]
 ignore = ["D100"]
 line-length = 79
-fixable = ["I"]
+fixable = ["I", "COM"]
 
 [per-file-ignores]
 "settings.py" = ["E501"]
 
 [flake8-quotes]
-docstring-quotes = "double"
+docstring-quotes = "single"

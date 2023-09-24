@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 import sys
-
+import tracemalloc
 from tqdm import tqdm
 
 from pars_site import parse_links_product
@@ -59,7 +59,8 @@ def main() -> None:
 
         except (ValueError, TypeError) as err:
             logging.error(
-                f'Не корректные входные данные от пользователя: {err}'
+                f'Не корректные входные данные '
+                f'от пользователя: {err}',
             )
             print(f'{bc.FAIL}{MESSAGE_POSITIVE_INT}')
             pass
@@ -85,7 +86,10 @@ def main() -> None:
                 await asyncio.sleep(1)
 
     loop = asyncio.get_event_loop()
+    tracemalloc.start()
     loop.run_until_complete(run_parse())
+
+
 
 
 if __name__ == '__main__':
