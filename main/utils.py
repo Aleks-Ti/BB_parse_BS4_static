@@ -16,6 +16,6 @@ def parse_data_save() -> None:
     excel_file_path = 'product_date.xlsx'
     try:
         df.to_excel(excel_file_path, index=True)
-        print(f"{bc.OK_CYAN}Данные сохранены в {excel_file_path}")
+        print(f'{bc.OK_CYAN}Данные сохранены в {excel_file_path}')
     except BaseException as err:
         print(f'{bc.FAIL}Ошибка записи данных: {err}{bc.WARNING}')
